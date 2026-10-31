@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Comic extends Model
 {
@@ -10,18 +11,23 @@ class Comic extends Model
         'title',
         'author',
         'year',
-        'genre',
+        'price',
+        'genre_id',     // Siguraduhing nandito ito!
         'is_completed',
-        'description',
+        'is_featured',
     ];
 
     protected function casts(): array
     {
         return [
-            
             'is_completed' => 'boolean',
             'year' => 'integer',
         ];
     }
-    //
+
+    // Part C: Relationship papunta sa Genre model (singular)
+    public function genre(): BelongsTo
+    {
+        return $this->belongsTo(Genre::class);
+    }
 }

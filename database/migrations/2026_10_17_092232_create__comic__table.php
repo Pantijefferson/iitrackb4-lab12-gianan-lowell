@@ -16,8 +16,10 @@ return new class extends Migration
     $table->string('title');
     $table->string('author');
     $table->integer('year');
-    $table->string('genre');
-    $table->boolean('is_completed')->default(false); 
+    $table->decimal('price', 8, 2)->default(0); // Siguraduhing may ganito
+    $table->foreignId('genre_id')->constrained(); // foreign key para sa genres
+    $table->boolean('is_completed')->default(false);
+    $table->boolean('is_featured')->default(false);
     $table->timestamps();
 });
     }
