@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\Log;
 use App\Models\Comic;
 use App\Models\Genre;
 use Illuminate\Support\Facades\DB;
@@ -9,37 +9,13 @@ use Illuminate\Http\Request;
 
 class ComicController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         
-        DB::enableQueryLog();
-
-        $genres = Genre::all();      
+        $comics = Comic::withh('genre')->get(); 
         
-        $genreId = $request->query('genre_id');
-        $year = $request->query('year');
-
-        
-        $query = Comic::query();
-
-        if ($genreId && $genreId !== 'all') {
-            $query->where('genre_id', $genreId);
-        }
-
-        if ($year && $year !== 'all') {
-            $query->where('year', $year);
-        }
-
-        $comics = $query->get();
-
-        return view('comics.index', [
-            'comics'   => $comics,
-            'genres'   => $genres,
-            'genreId'  => $genreId,
-            'year'     => $year,
-        ]);
+        return view('comics.index', compact('comics'));
     }
-
     public function create()
     {
         
@@ -81,22 +57,31 @@ class ComicController extends Controller
     return view('comics.edit', compact('comic', 'genres'));
 }
 
-    public function update(Request $request, Comic $comic)
+   public function update(Request $request, Comic $comic)
 {
     $validated = $request->validate([
         'title' => 'required|string|max:255',
         'author' => 'required|string|max:255',
+        'year' => 'required|integer',
         'genre_id' => 'required|exists:genres,id',
+        'price' => 'required|numeric',
     ]);
 
+    
     $comic->update($validated);
 
-    
-    return redirect()->route('comics.index')->with('success', 'Comic updated successfully!');
+   
+    Log::info('Comic saved', [
+        'id' => $comic->id,
+    ]);
+
+    return redirect()->route('comics.index');
 }
 
     public function destroy(Comic $comic)
 {
+    abort_if($comic->genre->comics()->count() === 1, 403);
+
     $comic->delete();
 
     return redirect()->route('comics.index');
