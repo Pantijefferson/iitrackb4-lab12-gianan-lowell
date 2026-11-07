@@ -10,35 +10,35 @@ use Illuminate\Http\Request;
 class ComicController extends Controller
 {
     public function index(Request $request)
-{
-    // Part F: Enable query log
-    DB::enableQueryLog();
+    {
+        
+        DB::enableQueryLog();
 
-    $genres = Genre::all();      
-    
-    $genreId = $request->query('genre_id');
-    $year = $request->query('year');
+        $genres = Genre::all();      
+        
+        $genreId = $request->query('genre_id');
+        $year = $request->query('year');
 
-    // DITO ANG BAGONG PAGBABAGO: Idinagdag ang ->with('genre')
-    $query = Comic::with('genre');
+        
+        $query = Comic::query();
 
-    if ($genreId && $genreId !== 'all') {
-        $query->where('genre_id', $genreId);
+        if ($genreId && $genreId !== 'all') {
+            $query->where('genre_id', $genreId);
+        }
+
+        if ($year && $year !== 'all') {
+            $query->where('year', $year);
+        }
+
+        $comics = $query->get();
+
+        return view('comics.index', [
+            'comics'   => $comics,
+            'genres'   => $genres,
+            'genreId'  => $genreId,
+            'year'     => $year,
+        ]);
     }
-
-    if ($year && $year !== 'all') {
-        $query->where('year', $year);
-    }
-
-    $comics = $query->get();
-
-    return view('comics.index', [
-        'comics'   => $comics,
-        'genres'   => $genres,
-        'genreId'  => $genreId,
-        'year'     => $year,
-    ]);
-}
 
     public function create()
     {
@@ -56,7 +56,7 @@ class ComicController extends Controller
             'author'      => 'required|max:100',
             'year'        => 'required|digits:4|integer|min:1000|max:' . date('Y'),
             'price'       => 'required|numeric|min:0',
-            'genre_id'    => 'required|exists:genres,id', // Part E: exists rule against lookup table
+            'genre_id'    => 'required|exists:genres,id', 
             'is_featured' => 'sometimes|boolean',
         ]);
 
@@ -70,28 +70,37 @@ class ComicController extends Controller
             ->with('success', 'Comic added successfully.');
     }
 
-    public function show(string $id)
-    {
-        $comic = Comic::findOrFail($id);
+    public function show(Comic $comic)
+{
+    return view('comics.show', ['comic' => $comic]);
+}
 
-        return view('comics.show', ['comic' => $comic]);
-    }
+    public function edit(Comic $comic)
+{
+    $genres = Genre::all(); 
+    return view('comics.edit', compact('comic', 'genres'));
+}
 
-    public function edit(string $id)
-    {
-        //
-    }
+    public function update(Request $request, Comic $comic)
+{
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'author' => 'required|string|max:255',
+        'genre_id' => 'required|exists:genres,id',
+    ]);
 
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+    $comic->update($validated);
 
-    public function destroy(string $id)
-    {
-        //
-    }
+    
+    return redirect()->route('comics.index')->with('success', 'Comic updated successfully!');
+}
 
+    public function destroy(Comic $comic)
+{
+    $comic->delete();
+
+    return redirect()->route('comics.index');
+}
     public function feature()
     {
         $comic = Comic::where('is_featured', true)->first();
